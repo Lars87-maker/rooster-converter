@@ -3,13 +3,10 @@ import fitz  # PyMuPDF
 from icalendar import Calendar, Event
 from datetime import datetime, timedelta
 import re
-import io
 
-# Tijdcorrectie
 def correct_time(time_str):
     return "23:59" if time_str == "24:00" else time_str
 
-# Tekst parser
 def extract_events_from_text(text):
     events = []
     lines = text.splitlines()
@@ -24,15 +21,15 @@ def extract_events_from_text(text):
             continue
         if not onder_soort_kop:
             continue
-        date_match = re.match(r"(\\d{2}/\\d{2}/\\d{4})", line)
+        date_match = re.match(r"(\d{2}/\d{2}/\d{4})", line)
         if date_match:
             current_date = datetime.strptime(date_match.group(1), "%d/%m/%Y")
             continue
-        activity_match = re.search(r"(?:Memo:\\s*)?Activiteit:\\s*(.+)", line)
+        activity_match = re.search(r"(?:Memo:\s*)?Activiteit:\s*(.+)", line)
         if activity_match and current_date:
             activiteiten_per_datum[current_date.date()] = activity_match.group(1).strip()
             continue
-        dienst_match = re.search(r"(DIENST|CONSIG).*?(\\d{2}:\\d{2})-(\\d{2}:\\d{2})", line, re.IGNORECASE)
+        dienst_match = re.search(r"(DIENST|CONSIG).*?(\d{2}:\d{2})-(\d{2}:\d{2})", line, re.IGNORECASE)
         if dienst_match and current_date:
             dienst_type = dienst_match.group(1).upper()
             start_str = correct_time(dienst_match.group(2))
@@ -58,7 +55,6 @@ def extract_events_from_text(text):
         })
     return events
 
-# ICS-bestand maken
 def create_ics(events):
     cal = Calendar()
     for event in events:
@@ -70,27 +66,18 @@ def create_ics(events):
         cal.add_component(e)
     return cal.to_ical()
 
-# Streamlit app
+# Streamlit interface
 st.set_page_config(page_title="Rooster naar ICS", layout="centered")
-st.title(\"📅 Rooster PDF naar ICS Converter\")
-
-uploaded_file = st.file_uploader(\"Upload je PDF-rooster\", type=[\"pdf\"])
+st.title("📅 Rooster PDF naar ICS Converter")
+uploaded_file = st.file_uploader("Upload je PDF-rooster", type=["pdf"])
 
 if uploaded_file:
-    doc = fitz.open(stream=uploaded_file.read(), filetype=\"pdf\")
-    text = \"\\n\".join(page.get_text() for page in doc)
+    doc = fitz.open(stream=uploaded_file.read(), filetype="pdf")
+    text = "\n".join(page.get_text() for page in doc)
     events = extract_events_from_text(text)
-
     if events:
         ics_data = create_ics(events)
-        st.success(\"ICS-bestand gegenereerd!\")
-
-        st.download_button(
-            label=\"💾 Download ICS-bestand\",
-            data=ics_data,
-            file_name=\"rooster.ics\",
-            mime=\"text/calendar\"
-        )
+        st.success("ICS-bestand gegenereerd!")
+        st.download_button("💾 Download ICS-bestand", data=ics_data, file_name="rooster.ics", mime="text/calendar")
     else:
-        st.warning(\"Geen diensten gevonden in dit PDF-bestand.\")
-
+        st.warning("Geen diensten gevonden in dit PDF-bestand.")
