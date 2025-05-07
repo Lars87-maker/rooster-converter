@@ -71,7 +71,7 @@ def create_ics(events):
     return cal.to_ical()
 
 # Streamlit app
-st.set_page_config(page_title=\"Rooster naar ICS\", layout=\"centered\")
+st.set_page_config(page_title="Rooster naar ICS", layout="centered")
 st.title(\"📅 Rooster PDF naar ICS Converter\")
 
 uploaded_file = st.file_uploader(\"Upload je PDF-rooster\", type=[\"pdf\"])
